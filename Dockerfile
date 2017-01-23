@@ -5,6 +5,8 @@ ENV GOPATH /go
 # vim-common is needed for xxd
 # vim-minimal needs to be updated first to avoid an RPM conflict on man1/vim.1.gz
 RUN dnf update -y vim-minimal && \
-	dnf install -y llvm clang kernel-devel make binutils vim-common golang go-bindata
+	dnf install -y llvm clang kernel-devel make binutils vim-common golang go-bindata ShellCheck git file
+
+RUN go get -u gopkg.in/mvdan/sh.v1/cmd/shfmt
 
 RUN mkdir -p /src /go

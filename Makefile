@@ -28,3 +28,7 @@ install-generated-go:
 
 delete-docker-image:
 	$(SUDO) docker rmi -f $(DOCKER_IMAGE)
+
+lint:
+	./tools/lint -ignorespelling "agre " -ignorespelling "AGRE " .
+	./tools/shell-lint .

@@ -28,15 +28,17 @@ test:
     - |
       cd $SRCDIR && sudo docker run --rm \
                 -e GOPATH=/go \
-                -e SRCDIR=$SRCDIR2 \
                 -v $SRCDIR:$SRCDIR2 \
                 --workdir=$SRCDIR2 \
                 weaveworks/tcptracer-bpf-builder \
                 /bin/sh -c \
-                'cd tests && make && GOOS=darwin make'
+                'export PATH=$GOPATH/bin:$PATH &&
+                  make lint &&
+                  cd tests &&
+                  make &&
+                  GOOS=darwin make'
     - |
       cd $SRCDIR && sha512sum ebpf/tcptracer-ebpf.*
-
 
 deployment:
   hub:
