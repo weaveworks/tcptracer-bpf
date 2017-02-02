@@ -809,5 +809,3 @@ char _license[] SEC("license") = "GPL";
 // this number will be interpreted by gobpf-elf-loader to set the current
 // running kernel version
 __u32 _version SEC("version") = 0xFFFFFFFE;
-
-char _build_id[] SEC("build_id") = CIRCLE_BUILD_URL;

@@ -3,6 +3,7 @@
 package tracer
 
 import (
+	"bytes"
 	"fmt"
 
 	bpflib "github.com/iovisor/gobpf/elf"
@@ -14,13 +15,27 @@ type Tracer struct {
 	perfMapIPV6 *bpflib.PerfMap
 }
 
-func NewTracerFromFile(fileName string, tcpEventCbV4 func(TcpV4), tcpEventCbV6 func(TcpV6)) (*Tracer, error) {
-	m := bpflib.NewModule(fileName)
+func TracerAsset() ([]byte, error) {
+	buf, err := Asset("tcptracer-ebpf.o")
+	if err != nil {
+		return nil, fmt.Errorf("couldn't find asset: %s", err)
+	}
+	return buf, nil
+}
+
+func NewTracer(tcpEventCbV4 func(TcpV4), tcpEventCbV6 func(TcpV6)) (*Tracer, error) {
+	buf, err := Asset("tcptracer-ebpf.o")
+	if err != nil {
+		return nil, fmt.Errorf("couldn't find asset: %s", err)
+	}
+	reader := bytes.NewReader(buf)
+
+	m := bpflib.NewModuleFromReader(reader)
 	if m == nil {
 		return nil, fmt.Errorf("BPF not supported")
 	}
 
-	err := m.Load()
+	err = m.Load()
 	if err != nil {
 		return nil, err
 	}

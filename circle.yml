@@ -16,9 +16,12 @@ dependencies:
   override:
     - |
       mkdir -p $(dirname $SRCDIR) &&
-      cp -r $(pwd)/ $SRCDIR
+      cp -r --preserve=timestamps $(pwd)/ $SRCDIR
     - |
-      cd $SRCDIR && make
+      cd $SRCDIR &&
+      make build-docker-image &&
+      make build-ebpf-object &&
+      cmp ebpf/tcptracer-ebpf.go pkg/tracer/tcptracer-ebpf.go
 
 test:
   override:
@@ -31,10 +34,13 @@ test:
                 weaveworks/tcptracer-bpf-builder \
                 /bin/sh -c \
                 'cd tests && make && GOOS=darwin make'
+    - |
+      cd $SRCDIR && sha512sum ebpf/tcptracer-ebpf.*
+
 
 deployment:
   hub:
     branch: /.*/
     commands:
       - |
-        cd $SRCDIR && cp ebpf/tcptracer-ebpf.o $CIRCLE_ARTIFACTS/
+        cd $SRCDIR && cp ebpf/tcptracer-ebpf.* $CIRCLE_ARTIFACTS/

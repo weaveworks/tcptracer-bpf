@@ -10,5 +10,4 @@ build:
 		-O2 -emit-llvm -c tcptracer-bpf.c \
 		$(foreach path,$(LINUX_HEADERS), -I $(path)/arch/x86/include -I $(path)/arch/x86/include/generated -I $(path)/include -I $(path)/include/generated/uapi -I $(path)/arch/x86/include/uapi -I $(path)/include/uapi) \
 		-o - | llc -march=bpf -filetype=obj -o "${DEST_DIR}/tcptracer-ebpf.o"
-	sha1sum ebpf/tcptracer-ebpf.o
-	objdump -s --section=build_id ebpf/tcptracer-ebpf.o | grep "^ " | xxd -r | tr "\0" "\n"
+	go-bindata -pkg tracer -prefix "${DEST_DIR}/" -modtime 1 -o "${DEST_DIR}/tcptracer-ebpf.go" "${DEST_DIR}/tcptracer-ebpf.o"
