@@ -1,0 +1,14 @@
+{
+	"version": 0,
+	"dependencies": [
+		{
+			"importpath": "github.com/iovisor/gobpf/elf",
+			"repository": "https://github.com/iovisor/gobpf",
+			"vcs": "git",
+			"revision": "a67ade2bfcc4aee4e2725c23fb89335f672560bd",
+			"branch": "master",
+			"path": "/elf",
+			"notests": true
+		}
+	]
+}
