@@ -69,28 +69,40 @@ type fieldValues struct {
 	daddrIPv6 [4]uint32
 }
 
-func listenV4(listenCompleted chan freePort, closeListen chan struct{}) {
+func startServer() (chan struct{}, uint16, error) {
 	// port 0 means we let the kernel choose a free port
-	url := fmt.Sprintf("%s:0", listenIP)
-	l, err := net.Listen("tcp4", url)
+	addr := fmt.Sprintf("%s:0", listenIP)
+	l, err := net.Listen("tcp4", addr)
 	if err != nil {
-		listenCompleted <- freePort{port: 0, err: err}
-		return
+		return nil, 0, err
 	}
-
 	lport, err := strconv.Atoi(strings.Split(l.Addr().String(), ":")[1])
 	if err != nil {
-		listenCompleted <- freePort{port: 0, err: err}
-		return
+		return nil, 0, err
 	}
 
-	listenCompleted <- freePort{port: uint16(lport), err: nil}
-	close(listenCompleted)
+	stop := make(chan struct{})
+	go acceptV4(l, stop)
 
-	select {
-	case <-closeListen:
-		l.Close()
-		return
+	return stop, uint16(lport), nil
+}
+
+func acceptV4(l net.Listener, stop chan struct{}) {
+	for {
+		_, ok := <-stop
+		if ok {
+			conn, err := l.Accept()
+			if err != nil {
+				l.Close()
+				return
+			}
+			conn.Close()
+		} else {
+			// the main thread closed the channel, which signals there
+			// won't be any more connections
+			l.Close()
+			return
+		}
 	}
 }
 
@@ -128,7 +140,7 @@ func htons(a uint16) uint16 {
 // tryCurrentOffset creates a IPv4 or IPv6 connection so the corresponding
 // tcp_v{4,6}_connect kprobes get triggered and save the value at the current
 // offset in the eBPF map
-func tryCurrentOffset(module *elf.Module, mp *elf.Map, status *tcpTracerStatus, expected *fieldValues) error {
+func tryCurrentOffset(module *elf.Module, mp *elf.Map, status *tcpTracerStatus, expected *fieldValues, stop chan struct{}) error {
 	// for ipv6, we don't need the source port because we already guessed
 	// it doing ipv4 connections so we use a random destination address and
 	// try to connect to it
@@ -141,6 +153,9 @@ func tryCurrentOffset(module *elf.Module, mp *elf.Map, status *tcpTracerStatus, 
 
 	bindAddress := fmt.Sprintf("%s:%d", listenIP, expected.dport)
 	if status.what != guessDaddrIPv6 {
+		// signal the server that we're about to connect, this will block until
+		// the channel is free so we don't overload the server
+		stop <- struct{}{}
 		conn, err := net.Dial("tcp4", bindAddress)
 		if err != nil {
 			return fmt.Errorf("error dialing %q: %v\n", bindAddress, err)
@@ -301,19 +316,11 @@ func guess(b *elf.Module) error {
 		return nil
 	}
 
-	listenCompleted := make(chan freePort)
-	closeListen := make(chan struct{})
-
-	var listenPort uint16
-	go listenV4(listenCompleted, closeListen)
-	select {
-	case p := <-listenCompleted:
-		if p.err != nil {
-			return err
-		}
-		listenPort = p.port
+	stop, listenPort, err := startServer()
+	if err != nil {
+		return err
 	}
-	defer close(closeListen)
+	defer close(stop)
 
 	// initialize map
 	if err := b.UpdateElement(mp, unsafe.Pointer(&zero), unsafe.Pointer(status), 0); err != nil {
@@ -333,7 +340,7 @@ func guess(b *elf.Module) error {
 	}
 
 	for status.state != stateReady {
-		if err := tryCurrentOffset(b, mp, status, expected); err != nil {
+		if err := tryCurrentOffset(b, mp, status, expected, stop); err != nil {
 			return err
 		}
 
