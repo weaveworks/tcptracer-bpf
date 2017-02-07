@@ -288,7 +288,7 @@ func guess(b *elf.Module) error {
 
 	mp := b.Map("tcptracer_status")
 
-	pidTgid := uint64(os.Getpid()<<32 | syscall.Gettid())
+	pidTgid := uint64(os.Getpid())<<32 | uint64(syscall.Gettid())
 
 	status := &tcpTracerStatus{
 		state:    stateChecking,
