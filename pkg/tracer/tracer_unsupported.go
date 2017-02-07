@@ -8,7 +8,11 @@ import (
 
 type Tracer struct{}
 
-func NewTracerFromFile(fileName string, tcpEventCbV4 func(TcpV4), tcpEventCbV6 func(TcpV6)) (*Tracer, error) {
+func TracerAsset() ([]byte, error) {
+	return nil, fmt.Errorf("not supported on non-Linux systems")
+}
+
+func NewTracer(tcpEventCbV4 func(TcpV4), tcpEventCbV6 func(TcpV6)) (*Tracer, error) {
 	return nil, fmt.Errorf("not supported on non-Linux systems")
 }
 

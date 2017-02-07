@@ -349,16 +349,20 @@ func (b *Module) relocate(data []byte, rdata []byte) error {
 }
 
 func (b *Module) Load() error {
-	fileReader, err := os.Open(b.fileName)
-	if err != nil {
-		return err
+	if b.fileName != "" {
+		fileReader, err := os.Open(b.fileName)
+		if err != nil {
+			return err
+		}
+		defer fileReader.Close()
+		b.fileReader = fileReader
 	}
 
-	b.file, err = elf.NewFile(fileReader)
+	var err error
+	b.file, err = elf.NewFile(b.fileReader)
 	if err != nil {
 		return err
 	}
-	defer fileReader.Close()
 
 	license, err := elfReadLicense(b.file)
 	if err != nil {
