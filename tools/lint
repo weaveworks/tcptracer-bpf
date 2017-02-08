@@ -6,7 +6,7 @@
 #
 # For shell files, it runs shfmt. If you don't have that installed, you can get
 # it with:
-#   go get -u github.com/mvdan/sh/cmd/shfmt
+#   go get -u gopkg.in/mvdan/sh.v1/cmd/shfmt
 #
 # With no arguments, it lints the current files staged
 # for git commit.  Or you can pass it explicit filenames
@@ -194,7 +194,8 @@ matches_any() {
 filter_out() {
     local patterns_file="$1"
     if [ -n "$patterns_file" ] && [ -r "$patterns_file" ]; then
-        local patterns=$(sed '/^#.*$/d ; /^\s*$/d' "$patterns_file") # Remove blank lines and comments before we start iterating.
+        local patterns
+        patterns=$(sed '/^#.*$/d ; /^\s*$/d' "$patterns_file") # Remove blank lines and comments before we start iterating.
         [ -n "$DEBUG" ] && echo >&2 "> Filters:" && echo >&2 "$patterns"
         local filtered_out=()
         while read -r filename; do
@@ -217,7 +218,7 @@ list_files() {
 if [ $# = 1 ] && [ -f "$1" ]; then
     lint "$1"
 elif [ -n "$PARALLEL" ]; then
-    list_files "$@" | filter_out "$LINT_IGNORE_FILE" | xargs -n1 -P16 $0
+    list_files "$@" | filter_out "$LINT_IGNORE_FILE" | xargs -n1 -P16 "$0"
 else
     list_files "$@" | filter_out "$LINT_IGNORE_FILE" | lint_files
 fi
