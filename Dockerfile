@@ -8,5 +8,6 @@ RUN dnf update -y vim-minimal && \
 	dnf install -y llvm clang kernel-devel make binutils vim-common golang go-bindata ShellCheck git file
 
 RUN go get -u gopkg.in/mvdan/sh.v1/cmd/shfmt
+RUN go get -u github.com/fatih/hclfmt
 
 RUN mkdir -p /src /go
