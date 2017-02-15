@@ -286,7 +286,7 @@ static bool check_family(struct sock *sk, u16 expected_family) {
 
 	status = bpf_map_lookup_elem(&tcptracer_status, &zero);
 	if (status == NULL || status->state != TCPTRACER_STATE_READY) {
-		return 1;
+		return 0;
 	}
 
 	bpf_probe_read(&family, sizeof(u16), ((char *)sk) + status->offset_family);
