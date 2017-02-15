@@ -111,7 +111,7 @@ struct bpf_map_def SEC("maps/tcptracer_status") tcptracer_status = {
 	.type = BPF_MAP_TYPE_HASH,
 	.key_size = sizeof(__u64),
 	.value_size = sizeof(struct tcptracer_status_t),
-	.max_entries = 8,
+	.max_entries = 1,
 };
 
 __attribute__((always_inline))
