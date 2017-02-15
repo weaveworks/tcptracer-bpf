@@ -1,12 +1,18 @@
 #include <linux/kconfig.h>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wgnu-variable-sized-type-not-at-end"
 #include <linux/ptrace.h>
+#pragma clang diagnostic pop
 #include <linux/version.h>
 #include <linux/bpf.h>
 #include "bpf_helpers.h"
 #include "tcptracer-bpf.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wtautological-compare"
 #include <net/sock.h>
+#pragma clang diagnostic pop
 #include <net/inet_sock.h>
 #include <net/net_namespace.h>
 
