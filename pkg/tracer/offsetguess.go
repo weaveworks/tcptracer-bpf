@@ -158,7 +158,7 @@ func tryCurrentOffset(module *elf.Module, mp *elf.Map, status *tcpTracerStatus, 
 		stop <- struct{}{}
 		conn, err := net.Dial("tcp4", bindAddress)
 		if err != nil {
-			return fmt.Errorf("error dialing %q: %v\n", bindAddress, err)
+			return fmt.Errorf("error dialing %q: %v", bindAddress, err)
 		}
 
 		// get the source port assigned by the kernel

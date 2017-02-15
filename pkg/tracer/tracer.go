@@ -50,12 +50,12 @@ func NewTracer(tcpEventCbV4 func(TcpV4), tcpEventCbV6 func(TcpV6)) (*Tracer, err
 
 	perfMapIPV4, err := initializeIPv4(m, channelV4)
 	if err != nil {
-		return nil, fmt.Errorf("failed to init perf map for IPv4 events: %s\n", err)
+		return nil, fmt.Errorf("failed to init perf map for IPv4 events: %s", err)
 	}
 
 	perfMapIPV6, err := initializeIPv6(m, channelV6)
 	if err != nil {
-		return nil, fmt.Errorf("failed to init perf map for IPv6 events: %s\n", err)
+		return nil, fmt.Errorf("failed to init perf map for IPv6 events: %s", err)
 	}
 
 	perfMapIPV4.SetTimestampFunc(tcpV4Timestamp)
