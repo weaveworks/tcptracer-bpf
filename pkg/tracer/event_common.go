@@ -8,10 +8,9 @@ type EventType uint32
 
 // These constants should be in sync with the equivalent definitions in the ebpf program.
 const (
-	_ EventType = iota
-	EventConnect
-	EventAccept
-	EventClose
+	EventConnect EventType = 1
+	EventAccept            = 2
+	EventClose             = 3
 )
 
 func (e EventType) String() string {
