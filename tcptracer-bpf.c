@@ -303,7 +303,6 @@ static bool check_family(struct sock *sk, u16 expected_family) {
 __attribute__((always_inline))
 static int read_ipv4_tuple(struct ipv4_tuple_t *tuple, struct tcptracer_status_t *status, struct sock *skp)
 {
-	struct ns_common *ns;
 	u32 saddr, daddr, net_ns_inum;
 	u16 sport, dport;
 	possible_net_t *skc_net;
@@ -340,8 +339,7 @@ static int read_ipv4_tuple(struct ipv4_tuple_t *tuple, struct tcptracer_status_t
 __attribute__((always_inline))
 static int read_ipv6_tuple(struct ipv6_tuple_t *tuple, struct tcptracer_status_t *status, struct sock *skp)
 {
-	struct ns_common *ns;
-	u32 saddr, daddr, net_ns_inum;
+	u32 net_ns_inum;
 	u16 sport, dport;
 	u64 saddr_h, saddr_l, daddr_h, daddr_l;
 	possible_net_t *skc_net;
@@ -503,7 +501,7 @@ int kretprobe__tcp_v6_connect(struct pt_regs *ctx)
 			.sport = ntohs(t.sport),
 			.dport = ntohs(t.dport),
 		};
-		bpf_map_update_elem(&tuplepid_ipv4, &t, &p, BPF_ANY);
+		bpf_map_update_elem(&tuplepid_ipv4, &t4, &p, BPF_ANY);
 		return 0;
 	}
 
@@ -514,7 +512,6 @@ int kretprobe__tcp_v6_connect(struct pt_regs *ctx)
 SEC("kprobe/tcp_set_state")
 int kprobe__tcp_set_state(struct pt_regs *ctx)
 {
-	u64 pid = bpf_get_current_pid_tgid();
 	u32 cpu = bpf_get_smp_processor_id();
 	struct sock *skp;
 	struct tcptracer_status_t *status;
@@ -728,9 +725,6 @@ int kretprobe__inet_csk_accept(struct pt_regs *ctx)
 	if (status == NULL || status->state != TCPTRACER_STATE_READY) {
 		return 0;
 	}
-
-	// FIXME? assume this is TCP
-	u8 protocol = IPPROTO_TCP;
 
 	// pull in details
 	u16 lport, dport;
