@@ -4,8 +4,9 @@
 
 This project allows you to configure a machine with:
 
-* Docker and Weave Net: `setup_docker_weave-net.yml`
-* Docker, Kubernetes and Weave Kube (CNI plugin): `setup_docker_k8s_weave-kube.yml`
+* Docker and Weave Net for development: `setup_weave-net_dev.yml`
+* Docker and Weave Net for testing: `setup_weave-net_test.yml`
+* Docker, Kubernetes and Weave Kube (CNI plugin): `setup_weave-kube.yml`
 
 You can then use these environments for development, testing and debugging.
 
@@ -42,7 +43,7 @@ These can be used to selectively run (`--tags "tag1,tag2"`) or skip (`--skip-tag
 ### Local machine
 
 ```
-ansible-playbook -u <username> -i "localhost", -c local setup_docker_k8s_weave-kube.yml
+ansible-playbook -u <username> -i "localhost", -c local setup_weave-kube.yml
 ```
 
 ### Vagrant
@@ -70,7 +71,7 @@ and finally run:
 ```
 ansible-playbook --private-key=$vagrant_ssh_id_file -u $vagrant_ssh_user \
 --ssh-extra-args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
--i "$vagrant_ssh_host:$vagrant_ssh_port," setup_docker_k8s_weave-kube.yml
+-i "$vagrant_ssh_host:$vagrant_ssh_port," setup_weave-kube.yml
 ```
 
 or, for specific versions of Kubernetes and Docker:
@@ -78,29 +79,34 @@ or, for specific versions of Kubernetes and Docker:
 ```
 ansible-playbook --private-key=$vagrant_ssh_id_file -u $vagrant_ssh_user \
 --ssh-extra-args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
--i "$vagrant_ssh_host:$vagrant_ssh_port," setup_docker_k8s_weave-kube.yml \
+-i "$vagrant_ssh_host:$vagrant_ssh_port," setup_weave-kube.yml \
 --extra-vars "docker_version=1.12.3 kubernetes_version=1.4.4"
 ```
+
+NOTE: Kubernetes APT repo includes only the latest version, so currently
+retrieving an older version will fail.
 
 ### Terraform
 
 Provision your machine using the Terraform scripts from `../provisioning`, then run:
 
 ```
-ansible-playbook -u `terraform output username` -i "`terraform output public_ips`," \
---ssh-extra-args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
-../../config_management/setup_docker_k8s_weave-kube.yml
+terraform output ansible_inventory > /tmp/ansible_inventory
+```
+
+and
+
+```
+ansible-playbook \
+    --private-key="$(terraform output private_key_path)" \
+    -u "$(terraform output username)" \
+    -i /tmp/ansible_inventory \
+    --ssh-extra-args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
+    ../../config_management/setup_weave-kube.yml
 
 ```
 
-or, for specific versions of Kubernetes and Docker:
-
-```
-ansible-playbook -u `terraform output username` -i "`terraform output public_ips`," \
---ssh-extra-args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
-../../config_management/setup_docker_k8s_weave-kube.yml \
---extra-vars "docker_version=1.12.3 kubernetes_version=1.4.4"
-```
+To specify versions of Kubernetes and Docker see Vagrant examples above.
 
 N.B.: `--ssh-extra-args` is used to provide:
 
