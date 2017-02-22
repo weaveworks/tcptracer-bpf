@@ -80,7 +80,7 @@ fi
 # If running on circle, use the scheduler to work out what tests to run on what shard
 if [ -n "$CIRCLECI" ] && [ -z "$NO_SCHEDULER" ] && [ -x "$DIR/sched" ]; then
     PREFIX=$(go list -e ./ | sed -e 's/\//-/g')
-    TESTDIRS=($(echo "${TESTDIRS[@]}" | "$DIR/sched" sched "$PREFIX-$CIRCLE_BUILD_NUM" "$CIRCLE_NODE_TOTAL" "$CIRCLE_NODE_INDEX"))
+    TESTDIRS=($(echo "${TESTDIRS[@]}" | "$DIR/sched" sched "$PREFIX-$CIRCLE_PROJECT_USERNAME-$CIRCLE_PROJECT_REPONAME-$CIRCLE_BUILD_NUM" "$CIRCLE_NODE_TOTAL" "$CIRCLE_NODE_INDEX"))
     echo "${TESTDIRS[@]}"
 fi
 
