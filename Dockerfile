@@ -1,4 +1,4 @@
-FROM fedora:24
+FROM fedora:25
 
 ENV GOPATH /go
 
