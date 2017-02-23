@@ -313,7 +313,8 @@ function tf_ssh() {
     local ip="$(sed "$1q;d" <<<"$(terraform output public_etc_hosts)" | cut -d ' ' -f 1)"
     shift # Drop the first argument, corresponding to the machine ID, to allow passing other arguments to SSH using "$@" -- see below.
     [ -z "$ip" ] && tf_ssh_usage "Invalid host ID provided." && return 1
-    ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no "$@" "$(terraform output username)"@"$ip"
+    # shellcheck disable=SC2029
+    ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no "$@" "$(terraform output username)@$ip"
 }
 alias tf_ssh='tf_ssh'
 
@@ -329,7 +330,7 @@ Examples:
   $ tf_ansi 1 -vvv
 Available playbooks:
 EOF
-    cat -n >&2 <<<"$(for file in "$(dirname "$0")"/../../config_management/*.yml; do basename "$file" | sed 's/.yml//'; done)"
+    cat -n >&2 <<<"$(for file in "$(dirname "${BASH_SOURCE[0]}")"/../../config_management/*.yml; do basename "$file" | sed 's/.yml//'; done)"
 }
 
 # shellcheck disable=SC2155,SC2064
@@ -341,10 +342,10 @@ function tf_ansi() {
         local playbooks=(../../config_management/*.yml)
         local path="${playbooks[(($id-1))]}" # Select the ith entry in the list of playbooks (0-based).
     else
-        local path="$(dirname "$0")/../../config_management/$id.yml"
+        local path="$(dirname "${BASH_SOURCE[0]}")/../../config_management/$id.yml"
     fi
     local inventory="$(mktemp /tmp/ansible_inventory_XXX)"
-    trap 'rm $inventory' SIGINT SIGTERM RETURN
+    trap 'rm -f $inventory' SIGINT SIGTERM RETURN
     echo -e "$(terraform output ansible_inventory)" >"$inventory"
     [ ! -r "$path" ] && tf_ansi_usage "Ansible playbook not found: $path" && return 1
     ansible-playbook "$@" -u "$(terraform output username)" -i "$inventory" --ssh-extra-args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "$path"
