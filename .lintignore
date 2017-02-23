@@ -1,2 +1,3 @@
 ./pkg/tracer/tcptracer-ebpf.go
 ./ebpf/tcptracer-ebpf.go
+./.git/*
