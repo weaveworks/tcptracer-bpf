@@ -356,7 +356,7 @@ func guess(b *elf.Module) error {
 		if status.offset_saddr >= threshold || status.offset_daddr >= threshold ||
 			status.offset_sport >= thresholdInetSock || status.offset_dport >= threshold ||
 			status.offset_netns >= threshold || status.offset_family >= threshold ||
-			status.offset_daddr_ipv6 >= 200 {
+			status.offset_daddr_ipv6 >= threshold {
 			return fmt.Errorf("overflow, bailing out")
 		}
 	}
