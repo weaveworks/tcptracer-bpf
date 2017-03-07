@@ -41,6 +41,13 @@ const (
 	stateReady                 = 3 // fully initialized, all offset known
 )
 
+var stateString = map[C.__u64]string{
+	stateUninitialized: "uninitialized",
+	stateChecking:      "checking",
+	stateChecked:       "checked",
+	stateReady:         "ready",
+}
+
 // These constants should be in sync with the equivalent definitions in the ebpf program.
 const (
 	guessSaddr     C.__u64 = 0
@@ -51,6 +58,16 @@ const (
 	guessNetns             = 5
 	guessDaddrIPv6         = 6
 )
+
+var whatString = map[C.__u64]string{
+	guessSaddr:     "source address",
+	guessDaddr:     "destination address",
+	guessFamily:    "family",
+	guessSport:     "source port",
+	guessDport:     "destination port",
+	guessNetns:     "network namespace",
+	guessDaddrIPv6: "destination address IPv6",
+}
 
 const listenIP = "127.0.0.2"
 
@@ -206,7 +223,7 @@ func checkAndUpdateCurrentOffset(module *elf.Module, mp *elf.Map, status *tcpTra
 	}
 
 	if status.state != stateChecked {
-		return fmt.Errorf("invalid guessing state")
+		return fmt.Errorf("invalid guessing state while guessing %v, got %v expected %v", whatString[status.what], stateString[status.state], stateString[stateChecked])
 	}
 
 	switch status.what {
@@ -272,7 +289,7 @@ func checkAndUpdateCurrentOffset(module *elf.Module, mp *elf.Map, status *tcpTra
 			status.state = stateChecking
 		}
 	default:
-		return fmt.Errorf("unexpected field to guess")
+		return fmt.Errorf("unexpected field to guess: %v", whatString[status.what])
 	}
 
 	// update the map with the new offset/field to check
@@ -357,7 +374,7 @@ func guess(b *elf.Module) error {
 			status.offset_sport >= thresholdInetSock || status.offset_dport >= threshold ||
 			status.offset_netns >= threshold || status.offset_family >= threshold ||
 			status.offset_daddr_ipv6 >= threshold {
-			return fmt.Errorf("overflow, bailing out")
+			return fmt.Errorf("overflow while guessing %v, bailing out", whatString[status.what])
 		}
 	}
 
