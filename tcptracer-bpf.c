@@ -525,7 +525,7 @@ int kprobe__tcp_set_state(struct pt_regs *ctx)
 		return 0;
 	}
 
-	if (state != TCP_ESTABLISHED) {
+	if (state != TCP_ESTABLISHED && state != TCP_CLOSE) {
 		return 0;
 	}
 
@@ -533,6 +533,10 @@ int kprobe__tcp_set_state(struct pt_regs *ctx)
 		// output
 		struct ipv4_tuple_t t = { };
 		if (!read_ipv4_tuple(&t, status, skp)) {
+			return 0;
+		}
+		if (state == TCP_CLOSE) {
+			bpf_map_delete_elem(&tuplepid_ipv4, &t);
 			return 0;
 		}
 
@@ -567,6 +571,10 @@ int kprobe__tcp_set_state(struct pt_regs *ctx)
 		// output
 		struct ipv6_tuple_t t = { };
 		if (!read_ipv6_tuple(&t, status, skp)) {
+			return 0;
+		}
+		if (state == TCP_CLOSE) {
+			bpf_map_delete_elem(&tuplepid_ipv6, &t);
 			return 0;
 		}
 
