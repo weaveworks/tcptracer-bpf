@@ -200,7 +200,7 @@ func tryCurrentOffset(module *elf.Module, mp *elf.Map, status *tcpTracerStatus, 
 
 		conn.Close()
 	} else {
-		conn, err := net.DialTimeout("tcp6", fmt.Sprintf("[%s]:9092", ip), time.Millisecond)
+		conn, err := net.DialTimeout("tcp6", fmt.Sprintf("[%s]:9092", ip), 10*time.Millisecond)
 		// Since we connect to a random IP, this will most likely fail.
 		// In the unlikely case where it connects successfully, we close
 		// the connection to avoid a leak.
