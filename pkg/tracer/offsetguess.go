@@ -156,6 +156,21 @@ func htons(a uint16) uint16 {
 	return nativeEndian.Uint16(arr[:])
 }
 
+func generateRandomIPv6Address() (addr [4]uint32) {
+	// multicast (ff00::/8) or link-local (fe80::/10) addresses don't work for
+	// our purposes so let's choose a "random number" for the first 32 bits.
+	//
+	// chosen by fair dice roll.
+	// guaranteed to be random.
+	// https://xkcd.com/221/
+	addr[0] = 0x87586031
+	addr[1] = rand.Uint32()
+	addr[2] = rand.Uint32()
+	addr[3] = rand.Uint32()
+
+	return
+}
+
 // tryCurrentOffset creates a IPv4 or IPv6 connection so the corresponding
 // tcp_v{4,6}_connect kprobes get triggered and save the value at the current
 // offset in the eBPF map
@@ -163,10 +178,7 @@ func tryCurrentOffset(module *elf.Module, mp *elf.Map, status *tcpTracerStatus, 
 	// for ipv6, we don't need the source port because we already guessed
 	// it doing ipv4 connections so we use a random destination address and
 	// try to connect to it
-	expected.daddrIPv6[0] = rand.Uint32()
-	expected.daddrIPv6[1] = rand.Uint32()
-	expected.daddrIPv6[2] = rand.Uint32()
-	expected.daddrIPv6[3] = rand.Uint32()
+	expected.daddrIPv6 = generateRandomIPv6Address()
 
 	ip := ipv6FromUint32Arr(expected.daddrIPv6)
 
