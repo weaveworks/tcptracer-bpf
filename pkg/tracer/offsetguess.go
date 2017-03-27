@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -333,6 +334,11 @@ func guess(b *elf.Module) error {
 	}
 
 	mp := b.Map("tcptracer_status")
+
+	// pid & tid must not change during the guessing work: the communication
+	// between ebpf and userspace relies on it
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
 
 	pidTgid := uint64(os.Getpid())<<32 | uint64(syscall.Gettid())
 
