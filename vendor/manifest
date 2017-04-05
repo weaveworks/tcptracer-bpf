@@ -5,7 +5,7 @@
 			"importpath": "github.com/iovisor/gobpf/elf",
 			"repository": "https://github.com/iovisor/gobpf",
 			"vcs": "git",
-			"revision": "21a9e281bf73650b9245d4ebcf111716338ae652",
+			"revision": "65e4048660d6c4339ebae113ac55b1af6f01305d",
 			"branch": "master",
 			"path": "/elf",
 			"notests": true
