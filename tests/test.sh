@@ -59,10 +59,10 @@ while [[ $lines_read -lt 4 ]]; do
         daddr=${BASH_REMATCH[3]}
         lines_read=$((lines_read + 1))
         printf "action: %s program: nc saddr: %s daddr: %s\n" "${action}" "${saddr}" "${daddr}"
-        if [[ "${action}" == "connect" && "$daddr" == "127.0.0.1:${port}" ]] \
-            || [[ "${action}" == "accept" && "$saddr" == "127.0.0.1:${port}" ]] \
-            || [[ "${action}" == "close" && "$daddr" == "127.0.0.1:${port}" ]] \
-            || [[ "${action}" == "close" && "$saddr" == "127.0.0.1:${port}" ]]; then
+        if [[ "${action}" == "connect" && "$daddr" == "127.0.0.1:${port}" ]] ||
+            [[ "${action}" == "accept" && "$saddr" == "127.0.0.1:${port}" ]] ||
+            [[ "${action}" == "close" && "$daddr" == "127.0.0.1:${port}" ]] ||
+            [[ "${action}" == "close" && "$saddr" == "127.0.0.1:${port}" ]]; then
             lines_found=$((lines_found + 1))
         else
             echo "^^^ unexpected values in event"
