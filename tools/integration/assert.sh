@@ -108,7 +108,7 @@ assert_end() {
 
 assert() {
     # assert <command> <expected stdout> [stdin]
-    ((tests_ran++))|| :
+    ((tests_ran++)) || :
     [[ -z "$DISCOVERONLY" ]] || return
     expected=$(echo -ne "${2:-}")
     result="$(eval "$1" 2>/dev/null <<<"${3:-}")" || true
@@ -124,7 +124,7 @@ assert() {
 
 assert_raises() {
     # assert_raises <command> <expected code> [stdin]
-    ((tests_ran++))|| :
+    ((tests_ran++)) || :
     [[ -z "$DISCOVERONLY" ]] || return
     status=0
     (eval "$1" <<<"${3:-}") >/dev/null 2>&1 || status=$?
@@ -146,7 +146,7 @@ _assert_fail() {
         exit 1
     fi
     tests_errors[$tests_failed]="$report"
-    ((tests_failed++))|| :
+    ((tests_failed++)) || :
 }
 
 skip_if() {
