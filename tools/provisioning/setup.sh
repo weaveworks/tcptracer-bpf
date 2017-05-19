@@ -304,11 +304,11 @@ function tf_ssh_usage() {
 ERROR: $1
 
 Usage:
-  $ tf_ssh <host ID (1-based)> [OPTION]...
+  \$ tf_ssh <host ID (1-based)> [OPTION]...
 Examples:
-  $ tf_ssh 1
-  $ tf_ssh 1 -o LogLevel VERBOSE
-  $ tf_ssh 1 -i ~/.ssh/custom_private_key_id_rsa
+  \$ tf_ssh 1
+  \$ tf_ssh 1 -o LogLevel VERBOSE
+  \$ tf_ssh 1 -i ~/.ssh/custom_private_key_id_rsa
 Available machines:
 EOF
     cat -n >&2 <<<"$(terraform output public_etc_hosts)"
@@ -330,12 +330,12 @@ function tf_ansi_usage() {
 ERROR: $1
 
 Usage:
-  $ tf_ansi <playbook or playbook ID (1-based)> [OPTION]...
+  \$ tf_ansi <playbook or playbook ID (1-based)> [OPTION]...
 Examples:
-  $ tf_ansi setup_weave-net_dev
-  $ tf_ansi 1
-  $ tf_ansi 1 -vvv --private-key=~/.ssh/custom_private_key_id_rsa
-  $ tf_ansi setup_weave-kube --extra-vars "docker_version=1.12.6 kubernetes_version=1.5.6"
+  \$ tf_ansi setup_weave-net_dev
+  \$ tf_ansi 1
+  \$ tf_ansi 1 -vvv --private-key=~/.ssh/custom_private_key_id_rsa
+  \$ tf_ansi setup_weave-kube --extra-vars "docker_version=1.12.6 kubernetes_version=1.5.6"
 Available playbooks:
 EOF
     cat -n >&2 <<<"$(for file in "$(dirname "${BASH_SOURCE[0]}")"/../../config_management/*.yml; do basename "$file" | sed 's/.yml//'; done)"
