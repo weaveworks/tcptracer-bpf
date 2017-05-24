@@ -2,6 +2,15 @@
 	"version": 0,
 	"dependencies": [
 		{
+			"importpath": "github.com/iovisor/gobpf/bpffs",
+			"repository": "https://github.com/iovisor/gobpf",
+			"vcs": "git",
+			"revision": "9848a216f66d4503c6bda4712ae487513fe5d3ca",
+			"branch": "master",
+			"path": "/bpffs",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/iovisor/gobpf/elf",
 			"repository": "https://github.com/iovisor/gobpf",
 			"vcs": "git",
