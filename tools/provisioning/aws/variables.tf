@@ -43,9 +43,11 @@ variable "aws_amis" {
     "eu-west-2" = "ami-23d0da47"
 
     # Red Hat Enterprise Linux 7.3 (HVM), SSD Volume Type:
+
     #"us-east-1" = "ami-b63769a1"
 
     # CentOS 7 (x86_64) - with Updates HVM
+
     #"us-east-1" = "ami-6d1c2007"
   }
 }

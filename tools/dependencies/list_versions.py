@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # List all available versions of Weave Net's dependencies:
 # - Go
