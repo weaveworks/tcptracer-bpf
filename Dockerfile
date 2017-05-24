@@ -7,7 +7,9 @@ ENV GOPATH /go
 RUN dnf update -y vim-minimal && \
 	dnf install -y llvm clang kernel-devel make binutils vim-common golang go-bindata ShellCheck git file
 
-RUN go get -u github.com/mvdan/sh/cmd/shfmt
+RUN curl -fsSL -o shfmt https://github.com/mvdan/sh/releases/download/v1.3.0/shfmt_v1.3.0_linux_amd64 && \
+    chmod +x shfmt && \
+    mv shfmt /usr/bin
 RUN go get -u github.com/fatih/hclfmt
 
 RUN mkdir -p /src /go
