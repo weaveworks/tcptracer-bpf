@@ -79,13 +79,13 @@ while [[ $lines_read -lt $lines_expected ]]; do
         daddr=${BASH_REMATCH[4]}
         lines_read=$((lines_read + 1))
         printf "action: %s pid: %s saddr: %s daddr: %s\n" "${action}" "${pid}" "${saddr}" "${daddr}"
-        if [[ "${action}" == "connect" && "$daddr" == "127.0.0.1:${port}" ]] ||
-            [[ "${action}" == "connect" && "$daddr" == "127.0.0.1:${port2}" ]] ||
-            [[ "${action}" == "accept" && "$saddr" == "127.0.0.1:${port}" ]] ||
-            [[ "${action}" == "close" && "$daddr" == "127.0.0.1:${port}" ]] ||
-            [[ "${action}" == "close" && "$daddr" == "127.0.0.1:${port2}" ]] ||
-            [[ "${action}" == "close" && "$saddr" == "127.0.0.1:${port}" ]] ||
-            [[ "${action}" == "close" && "$saddr" == "127.0.0.1:${port2}" ]]; then
+        if [[ "${action}" == "connect" && "$daddr" == "127.0.0.1:${port}" ]] \
+            || [[ "${action}" == "connect" && "$daddr" == "127.0.0.1:${port2}" ]] \
+            || [[ "${action}" == "accept" && "$saddr" == "127.0.0.1:${port}" ]] \
+            || [[ "${action}" == "close" && "$daddr" == "127.0.0.1:${port}" ]] \
+            || [[ "${action}" == "close" && "$daddr" == "127.0.0.1:${port2}" ]] \
+            || [[ "${action}" == "close" && "$saddr" == "127.0.0.1:${port}" ]] \
+            || [[ "${action}" == "close" && "$saddr" == "127.0.0.1:${port2}" ]]; then
             lines_found=$((lines_found + 1))
         else
             echo "^^^ unexpected values in event"

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Generate the cross product of latest versions of Weave Net's dependencies:
 # - Go
