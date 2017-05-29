@@ -1,0 +1,15 @@
+# Source of weaveworks/tcptracer-bpf:latest, meant for testing
+FROM fedora:25
+RUN dnf update -y vim-minimal && \
+        dnf install -y kernel-headers golang git
+ENV GOPATH /go
+RUN go get -d github.com/weaveworks/tcptracer-bpf/pkg/tracer
+RUN go get -d github.com/weaveworks/tcptracer-bpf/tests
+WORKDIR /go/src/github.com/weaveworks/tcptracer-bpf/tests
+RUN go build -ldflags "-extldflags \"-static\" -linkmode=external" -o tracer . 
+
+FROM alpine:3.6
+RUN apk --no-cache add ca-certificates
+WORKDIR /root/
+COPY --from=0 /go/src/github.com/weaveworks/tcptracer-bpf/tests/tracer .
+CMD ["./tracer"]  
