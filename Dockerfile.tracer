@@ -1,0 +1,12 @@
+# Source of weaveworks/tcptracer-bpf:latest, meant for testing
+FROM golang:1.8.3-alpine
+RUN apk --no-cache --update add linux-headers libc-dev git gcc
+ENV GOPATH /go
+ADD . /go/src/github.com/weaveworks/tcptracer-bpf/
+WORKDIR /go/src/github.com/weaveworks/tcptracer-bpf/tests
+RUN go build -ldflags "-extldflags \"-static\" -linkmode=external" -o tracer .
+
+FROM alpine:3.6
+WORKDIR /root/
+COPY --from=0 /go/src/github.com/weaveworks/tcptracer-bpf/tests/tracer .
+CMD ["sh", "-c", "mount -t debugfs none /sys/kernel/debug/ && ./tracer"]  
