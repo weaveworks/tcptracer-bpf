@@ -20,7 +20,7 @@ set -o pipefail
 # 4.4 - the longterm release used in Amazon Linux
 # 4.9 - the latest stable release
 readonly kernel_versions=("4.4.45" "4.9.6")
-readonly rkt_version="1.23.0"
+readonly rkt_version="1.26.0"
 
 if [[ ! -f "./rkt/rkt" ]] \
     || [[ ! "$(./rkt/rkt version | awk '/rkt Version/{print $3}')" == "${rkt_version}" ]]; then
