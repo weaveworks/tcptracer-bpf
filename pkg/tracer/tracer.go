@@ -15,6 +15,10 @@ type Tracer struct {
 	perfMapIPV4 *bpflib.PerfMap
 	perfMapIPV6 *bpflib.PerfMap
 	stopChan    chan struct{}
+	channelV4   chan []byte
+	channelV6   chan []byte
+	lostChanV4  chan uint64
+	lostChanV6  chan uint64
 }
 
 // maxActive configures the maximum number of instances of the probed functions
@@ -79,10 +83,19 @@ func NewTracer(cb Callback) (*Tracer, error) {
 		for {
 			select {
 			case <-stopChan:
+				// On stop, stopChan will be closed but the other channels will
+				// also be closed shortly after. The select{} has no priorities,
+				// therefore, the "ok" value must be checked below.
 				return
-			case data := <-channelV4:
+			case data, ok := <-channelV4:
+				if !ok {
+					return // see explanation above
+				}
 				cb.TCPEventV4(tcpV4ToGo(&data))
-			case lost := <-lostChanV4:
+			case lost, ok := <-lostChanV4:
+				if !ok {
+					return // see explanation above
+				}
 				cb.LostV4(lost)
 			}
 		}
@@ -93,9 +106,15 @@ func NewTracer(cb Callback) (*Tracer, error) {
 			select {
 			case <-stopChan:
 				return
-			case data := <-channelV6:
+			case data, ok := <-channelV6:
+				if !ok {
+					return // see explanation above
+				}
 				cb.TCPEventV6(tcpV6ToGo(&data))
-			case lost := <-lostChanV6:
+			case lost, ok := <-lostChanV6:
+				if !ok {
+					return // see explanation above
+				}
 				cb.LostV6(lost)
 			}
 		}
@@ -106,6 +125,10 @@ func NewTracer(cb Callback) (*Tracer, error) {
 		perfMapIPV4: perfMapIPV4,
 		perfMapIPV6: perfMapIPV6,
 		stopChan:    stopChan,
+		channelV4:   channelV4,
+		channelV6:   channelV6,
+		lostChanV4:  lostChanV4,
+		lostChanV6:  lostChanV6,
 	}, nil
 }
 
@@ -129,8 +152,15 @@ func (t *Tracer) RemoveFdInstallWatcher(pid uint32) (err error) {
 
 func (t *Tracer) Stop() {
 	close(t.stopChan)
+
 	t.perfMapIPV4.PollStop()
+	close(t.channelV4)
+	close(t.lostChanV4)
+
 	t.perfMapIPV6.PollStop()
+	close(t.channelV6)
+	close(t.lostChanV6)
+
 	t.m.Close()
 }
 
