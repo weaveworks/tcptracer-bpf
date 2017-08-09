@@ -5,7 +5,7 @@
 			"importpath": "github.com/iovisor/gobpf/elf",
 			"repository": "https://github.com/iovisor/gobpf",
 			"vcs": "git",
-			"revision": "51b4a5bc15ab504f9efb7702591ae04bc6c6f068",
+			"revision": "f53889884f5cb2c5c3c644a56467002232d208e9",
 			"branch": "master",
 			"path": "/elf",
 			"notests": true
@@ -14,7 +14,7 @@
 			"importpath": "github.com/iovisor/gobpf/pkg/bpffs",
 			"repository": "https://github.com/iovisor/gobpf",
 			"vcs": "git",
-			"revision": "51b4a5bc15ab504f9efb7702591ae04bc6c6f068",
+			"revision": "f53889884f5cb2c5c3c644a56467002232d208e9",
 			"branch": "master",
 			"path": "/pkg/bpffs",
 			"notests": true
@@ -23,7 +23,7 @@
 			"importpath": "github.com/iovisor/gobpf/pkg/cpuonline",
 			"repository": "https://github.com/iovisor/gobpf",
 			"vcs": "git",
-			"revision": "51b4a5bc15ab504f9efb7702591ae04bc6c6f068",
+			"revision": "f53889884f5cb2c5c3c644a56467002232d208e9",
 			"branch": "master",
 			"path": "/pkg/cpuonline",
 			"notests": true
