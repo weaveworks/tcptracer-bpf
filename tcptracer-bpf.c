@@ -12,6 +12,7 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wtautological-compare"
 #pragma clang diagnostic ignored "-Wgnu-variable-sized-type-not-at-end"
+#pragma clang diagnostic ignored "-Wenum-conversion"
 #include <net/sock.h>
 #pragma clang diagnostic pop
 #include <net/inet_sock.h>
