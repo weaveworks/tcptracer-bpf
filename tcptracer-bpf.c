@@ -2,6 +2,7 @@
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wgnu-variable-sized-type-not-at-end"
+#pragma clang diagnostic ignored "-Waddress-of-packed-member"
 #include <linux/ptrace.h>
 #pragma clang diagnostic pop
 #include <linux/version.h>
