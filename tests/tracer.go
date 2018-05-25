@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/weaveworks/tcptracer-bpf/pkg/tracer"
+	"github.com/DataDog/tcptracer-bpf/pkg/tracer"
 )
 
 var watchFdInstallPids string
