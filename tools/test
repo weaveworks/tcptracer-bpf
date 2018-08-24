@@ -109,7 +109,7 @@ run_test() {
         ) | paste -s -d, -)
         local output
         output=$(mktemp "$coverdir/unit.XXXXXXXXXX")
-        local GO_TEST_ARGS_RUN=("${GO_TEST_ARGS[@]}" -coverprofile=$output -coverpkg=$COVERPKGS)
+        local GO_TEST_ARGS_RUN=("${GO_TEST_ARGS[@]}" "-coverprofile=$output" "-coverpkg=$COVERPKGS")
     fi
 
     local START

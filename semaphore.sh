@@ -19,8 +19,8 @@ set -o pipefail
 # Currently we test on Linux version
 # 4.4 - the longterm release used in Amazon Linux
 # 4.9 - the latest stable release
-readonly kernel_versions=("4.4.114" "4.9.79")
-readonly rkt_version="1.29.0"
+readonly kernel_versions=("4.4.129" "4.9.96")
+readonly rkt_version="1.30.0"
 
 if [[ ! -f "./rkt/rkt" ]] \
     || [[ ! "$(./rkt/rkt version | awk '/rkt Version/{print $3}')" == "${rkt_version}" ]]; then
