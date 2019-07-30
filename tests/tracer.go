@@ -99,7 +99,7 @@ func main() {
 		fmt.Printf("Monitor fdinstall events for pid %d\n", pid)
 		t.AddFdInstallWatcher(uint32(pid))
 	}
-	
+
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, os.Kill)
 
