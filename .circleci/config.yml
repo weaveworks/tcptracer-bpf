@@ -1,0 +1,37 @@
+version: 2
+jobs:
+  build:
+    # Use 'machine' type so we can use KVM
+    machine:
+      docker_layer_caching: true
+    working_directory: /home/circleci/src/github.com/weaveworks/tcptracer-bpf
+    environment:
+      GOPATH: /home/circleci/
+      SRCDIR: /home/circleci/src/github.com/weaveworks/tcptracer-bpf
+      SRCDIR2: /go/src/github.com/weaveworks/tcptracer-bpf
+    steps:
+    - checkout
+    - run: make build-docker-image build-ebpf-object
+    - run: cmp ebpf/tcptracer-ebpf.go pkg/tracer/tcptracer-ebpf.go
+    - run: |
+        docker run --rm \
+                -e GOPATH=/go \
+                -v $SRCDIR:$SRCDIR2 \
+                --workdir=$SRCDIR2 \
+                weaveworks/tcptracer-bpf-builder \
+                /bin/sh -c \
+                'export PATH=$GOPATH/bin:$PATH &&
+                  make lint &&
+                  cd tests &&
+                  make &&
+                  GOOS=darwin make'
+    - run: sha512sum ebpf/tcptracer-ebpf.*
+    - store_artifacts:
+        path: ebpf
+    - run: ./smoketest.sh
+
+
+#general:
+#  branches:
+#    ignore:
+#      - gh-pages

@@ -2,7 +2,7 @@
 
 # Script to smoke test tcptracer-bpf
 #
-# `semaphore.sh` runs the test (`tests/run`) in a rkt container with
+# `smoketest.sh` runs the test (`tests/run`) in a rkt container with
 # custom build stage1-kvm images to test under different kernels.
 # stage1-kvm allows us to run a container inside a KVM virtual machine
 # and thus test eBPF workloads, which need a modern Linux kernel and
