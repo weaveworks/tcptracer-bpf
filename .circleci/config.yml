@@ -14,6 +14,7 @@ jobs:
     - run: make build-docker-image build-ebpf-object
     - run: cmp ebpf/tcptracer-ebpf.go pkg/tracer/tcptracer-ebpf.go
     - run: go get github.com/appc/docker2aci
+    - run: sudo apt install qemu-kvm
     - run: |
         docker run --rm \
                 -e GOPATH=/go \
