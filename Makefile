@@ -18,7 +18,7 @@ build-ebpf-object:
 		-e CIRCLE_BUILD_URL=$(CIRCLE_BUILD_URL) \
 		-v $(PWD):/src:ro \
 		-v $(PWD)/ebpf:/dist/ \
-		--workdir=/src \
+		--workdir=/src/pkg/tracer \
 		$(DOCKER_IMAGE) \
 		make -f ebpf.mk build
 	sudo chown -R $(UID):$(UID) ebpf
