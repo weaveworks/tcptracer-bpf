@@ -87,7 +87,7 @@ func NewTracer(cb Callback) (*Tracer, error) {
 				if !ok {
 					return // see explanation above
 				}
-				cb.TCPEventV4(tcpV4ToGo(&data))
+				cb.TCPEventV4(tcpV4ToGo(data))
 			case lost, ok := <-lostChanV4:
 				if !ok {
 					return // see explanation above
@@ -106,7 +106,7 @@ func NewTracer(cb Callback) (*Tracer, error) {
 				if !ok {
 					return // see explanation above
 				}
-				cb.TCPEventV6(tcpV6ToGo(&data))
+				cb.TCPEventV6(tcpV6ToGo(data))
 			case lost, ok := <-lostChanV6:
 				if !ok {
 					return // see explanation above

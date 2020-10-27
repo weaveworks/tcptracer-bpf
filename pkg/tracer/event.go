@@ -13,8 +13,8 @@ import (
 */
 import "C"
 
-func tcpV4ToGo(data *[]byte) (ret TcpV4) {
-	eventC := (*C.struct_tcp_ipv4_event_t)(unsafe.Pointer(&(*data)[0]))
+func tcpV4ToGo(data []byte) (ret TcpV4) {
+	eventC := (*C.struct_tcp_ipv4_event_t)(unsafe.Pointer(&data[0]))
 
 	ret.Timestamp = uint64(eventC.timestamp)
 	ret.CPU = uint64(eventC.cpu)
@@ -50,8 +50,8 @@ func tcpV4Timestamp(data *[]byte) uint64 {
 	return uint64(eventC.timestamp) + TimestampOffset
 }
 
-func tcpV6ToGo(data *[]byte) (ret TcpV6) {
-	eventC := (*C.struct_tcp_ipv6_event_t)(unsafe.Pointer(&(*data)[0]))
+func tcpV6ToGo(data []byte) (ret TcpV6) {
+	eventC := (*C.struct_tcp_ipv6_event_t)(unsafe.Pointer(&data[0]))
 
 	ret.Timestamp = uint64(eventC.timestamp)
 	ret.CPU = uint64(eventC.cpu)
