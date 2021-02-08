@@ -53,4 +53,6 @@ If you have any questions about, feedback for or problems with `tcptracer-bpf`:
 - Ask a question on the [#general](https://weave-community.slack.com/messages/general/) slack channel.
 - [File an issue](https://github.com/weaveworks/tcptracer-bpf/issues/new).
 
+Weaveworks follows the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md). Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting a Weaveworks project maintainer, or Alexis Richardson (alexis@weave.works).
+
 Your feedback is always welcome!
