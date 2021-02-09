@@ -8,7 +8,7 @@
 #include <linux/version.h>
 #include <linux/bpf.h>
 #include "bpf_helpers.h"
-#include "tcptracer-bpf.h"
+#include "pkg/tracer/tcptracer-bpf.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wtautological-compare"
