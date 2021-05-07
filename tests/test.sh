@@ -47,7 +47,9 @@ server2_pid=$!
 
 sleep 1 # wait for server2 to load
 
-nsenter --net="${netns}" "${tracer}" "--monitor-fdinstall-pids=${server2_pid}" >&3 &
+// Modified: removed fdinstall kprobes, so this option was removed
+// nsenter --net="${netns}" "${tracer}" "--monitor-fdinstall-pids=${server2_pid}" >&3 &
+nsenter --net="${netns}" "${tracer}" >&3 &
 tracer_pid=$!
 
 sleep 1 # wait for tracer to load
