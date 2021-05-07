@@ -7,6 +7,9 @@
 #define TCP_EVENT_TYPE_ACCEPT           2
 #define TCP_EVENT_TYPE_CLOSE            3
 #define TCP_EVENT_TYPE_FD_INSTALL       4
+// Modified: added UDP datagram connect events
+#define UDP_EVENT_TYPE_CONNECT          5
+
 
 #define GUESS_SADDR      0
 #define GUESS_DADDR      1
@@ -53,32 +56,7 @@ struct tcp_ipv6_event_t {
 	__u32 dummy;
 };
 
-// tcp_set_state doesn't run in the context of the process that initiated the
-// connection so we need to store a map TUPLE -> PID to send the right PID on
-// the event
-struct ipv4_tuple_t {
-	__u32 saddr;
-	__u32 daddr;
-	__u16 sport;
-	__u16 dport;
-	__u32 netns;
-};
-
-struct ipv6_tuple_t {
-	/* Using the type unsigned __int128 generates an error in the ebpf verifier */
-	__u64 saddr_h;
-	__u64 saddr_l;
-	__u64 daddr_h;
-	__u64 daddr_l;
-	__u16 sport;
-	__u16 dport;
-	__u32 netns;
-};
-
-struct pid_comm_t {
-	__u64 pid;
-	char comm[TASK_COMM_LEN];
-};
+// Modified: Removed ipvx_tuple_t and pid_comm_t because we do not need TUPLE -> PID map
 
 #define TCPTRACER_STATE_UNINITIALIZED 0
 #define TCPTRACER_STATE_CHECKING      1

@@ -69,54 +69,9 @@ struct bpf_map_def SEC("maps/connectsock_ipv6") connectsock_ipv6 = {
 	.namespace = "",
 };
 
-/* This is a key/value store with the keys being an ipv4_tuple_t
- * and the values being a struct pid_comm_t.
- */
-struct bpf_map_def SEC("maps/tuplepid_ipv4") tuplepid_ipv4 = {
-	.type = BPF_MAP_TYPE_HASH,
-	.key_size = sizeof(struct ipv4_tuple_t),
-	.value_size = sizeof(struct pid_comm_t),
-	.max_entries = 1024,
-	.pinning = 0,
-	.namespace = "",
-};
+// Modified: Removed tcp_set_state/close kprobes and no longer need the intermediary tuplepid_ipvx maps
 
-/* This is a key/value store with the keys being an ipv6_tuple_t
- * and the values being a struct pid_comm_t.
- */
-struct bpf_map_def SEC("maps/tuplepid_ipv6") tuplepid_ipv6 = {
-	.type = BPF_MAP_TYPE_HASH,
-	.key_size = sizeof(struct ipv6_tuple_t),
-	.value_size = sizeof(struct pid_comm_t),
-	.max_entries = 1024,
-	.pinning = 0,
-	.namespace = "",
-};
-
-// Modified: Removed fdinstall kprobes, so the corresponding maps are removed as well
-// /* This is a key/value store with the keys being a pid
-//  * and the values being a fd unsigned int.
-//  */
-// struct bpf_map_def SEC("maps/fdinstall_ret") fdinstall_ret = {
-// 	.type = BPF_MAP_TYPE_HASH,
-// 	.key_size = sizeof(__u64),
-// 	.value_size = sizeof(unsigned int),
-// 	.max_entries = 1024,
-// 	.pinning = 0,
-// 	.namespace = "",
-// };
-
-// /* This is a key/value store with the keys being a pid (tgid)
-//  * and the values being a boolean.
-//  */
-// struct bpf_map_def SEC("maps/fdinstall_pids") fdinstall_pids = {
-// 	.type = BPF_MAP_TYPE_HASH,
-// 	.key_size = sizeof(__u32),
-// 	.value_size = sizeof(__u32),
-// 	.max_entries = 1024,
-// 	.pinning = 0,
-// 	.namespace = "",
-// };
+// Modified: Removed fdinstall kprobes, so the corresponding maps were removed as well
 
 /* http://stackoverflow.com/questions/1001307/detecting-endianness-programmatically-in-a-c-program */
 __attribute__((always_inline))
@@ -350,8 +305,9 @@ static bool check_family(struct sock *sk, u16 expected_family) {
 	return family == expected_family;
 }
 
+// Modified: directly read into tcp_ipv4_event_t output struct
 __attribute__((always_inline))
-static int read_ipv4_tuple(struct ipv4_tuple_t *tuple, struct tcptracer_status_t *status, struct sock *skp)
+static int read_ipv4_tuple(struct tcp_ipv4_event_t *tuple, struct tcptracer_status_t *status, struct sock *skp)
 {
 	u32 saddr, daddr, net_ns_inum;
 	u16 sport, dport;
@@ -374,8 +330,9 @@ static int read_ipv4_tuple(struct ipv4_tuple_t *tuple, struct tcptracer_status_t
 
 	tuple->saddr = saddr;
 	tuple->daddr = daddr;
-	tuple->sport = sport;
-	tuple->dport = dport;
+    // Modified: convert ports in read_ipv4_tuple
+	tuple->sport = ntohs(sport);
+	tuple->dport = ntohs(dport);
 	tuple->netns = net_ns_inum;
 
 	// if addresses or ports are 0, ignore
@@ -386,8 +343,9 @@ static int read_ipv4_tuple(struct ipv4_tuple_t *tuple, struct tcptracer_status_t
 	return 1;
 }
 
+// Modified: directly read into tcp_ipv6_event_t output struct
 __attribute__((always_inline))
-static int read_ipv6_tuple(struct ipv6_tuple_t *tuple, struct tcptracer_status_t *status, struct sock *skp)
+static int read_ipv6_tuple(struct tcp_ipv6_event_t *tuple, struct tcptracer_status_t *status, struct sock *skp)
 {
 	u32 net_ns_inum;
 	u16 sport, dport;
@@ -417,8 +375,9 @@ static int read_ipv6_tuple(struct ipv6_tuple_t *tuple, struct tcptracer_status_t
 	tuple->saddr_l = saddr_l;
 	tuple->daddr_h = daddr_h;
 	tuple->daddr_l = daddr_l;
-	tuple->sport = sport;
-	tuple->dport = dport;
+    // Modified: convert ports in read_ipv6_tuple
+	tuple->sport = ntohs(sport);
+	tuple->dport = ntohs(dport);
 	tuple->netns = net_ns_inum;
 
 	// if addresses or ports are 0, ignore
@@ -475,15 +434,20 @@ int kretprobe__tcp_v4_connect(struct pt_regs *ctx)
 		return 0;
 	}
 
-	// output
-	struct ipv4_tuple_t t = { };
-	if (!read_ipv4_tuple(&t, status, skp)) {
+    // Modified: immediately output connect events, don't wait for tcp_set_state
+    struct tcp_ipv4_event_t evt4 = { };
+	if (!read_ipv4_tuple(&evt4, status, skp)) {
 		return 0;
 	}
 
-	struct pid_comm_t p = { .pid = pid };
-	bpf_get_current_comm(p.comm, sizeof(p.comm));
-	bpf_map_update_elem(&tuplepid_ipv4, &t, &p, BPF_ANY);
+    u32 cpu = bpf_get_smp_processor_id();
+    evt4.timestamp = bpf_ktime_get_ns();
+    evt4.cpu = cpu;
+    evt4.type = TCP_EVENT_TYPE_CONNECT;
+    evt4.pid = pid >> 32;
+	bpf_get_current_comm(&evt4.comm, sizeof(evt4.comm));
+
+    bpf_perf_event_output(ctx, &tcp_event_ipv4, cpu, &evt4, sizeof(evt4));
 
 	return 0;
 }
@@ -533,241 +497,47 @@ int kretprobe__tcp_v6_connect(struct pt_regs *ctx)
 		return 0;
 	}
 
-	// output
-	struct ipv6_tuple_t t = { };
+    // Modified: immediately output connect events, don't wait for tcp_set_state
+	struct tcp_ipv6_event_t t = { };
 	if (!read_ipv6_tuple(&t, status, skp)) {
 		return 0;
 	}
 
-	struct pid_comm_t p = { };
-	p.pid = pid;
-	bpf_get_current_comm(p.comm, sizeof(p.comm));
+    u32 cpu = bpf_get_smp_processor_id();
 
-	if (is_ipv4_mapped_ipv6(t.saddr_h, t.saddr_l, t.daddr_h, t.daddr_l)) {
-		struct ipv4_tuple_t t4 = {
-			.netns = t.netns,
+    if (is_ipv4_mapped_ipv6(t.saddr_h, t.saddr_l, t.daddr_h, t.daddr_l)) {
+		struct tcp_ipv4_event_t t4 = {
+            .timestamp = bpf_ktime_get_ns(),
+            .cpu = cpu,
+            .type = TCP_EVENT_TYPE_CONNECT,
+            .pid = pid >> 32,
 			.saddr = (u32)(t.saddr_l >> 32),
 			.daddr = (u32)(t.daddr_l >> 32),
-			.sport = ntohs(t.sport),
-			.dport = ntohs(t.dport),
+			.sport = t.sport,
+			.dport = t.dport,
+            .netns = t.netns,
 		};
-		bpf_map_update_elem(&tuplepid_ipv4, &t4, &p, BPF_ANY);
+
+        bpf_get_current_comm(&t4.comm, sizeof(t4.comm));
+
+        bpf_perf_event_output(ctx, &tcp_event_ipv4, cpu, &t4, sizeof(t4));
 		return 0;
 	}
 
-	bpf_map_update_elem(&tuplepid_ipv6, &t, &p, BPF_ANY);
+    t.timestamp = bpf_ktime_get_ns();
+    t.cpu = cpu;
+    t.type = TCP_EVENT_TYPE_CLOSE;
+    t.pid = pid >> 32;
+    bpf_get_current_comm(&t.comm, sizeof(t.comm));
+
+    bpf_perf_event_output(ctx, &tcp_event_ipv6, cpu, &t, sizeof(t));
+
 	return 0;
 }
 
-// Modified: Disabled tcp_set_state kprobe, as we do not need that for our application
-// SEC("kprobe/tcp_set_state")
-// int kprobe__tcp_set_state(struct pt_regs *ctx)
-// {
-// 	u32 cpu = bpf_get_smp_processor_id();
-// 	struct sock *skp;
-// 	struct tcptracer_status_t *status;
-// 	int state;
-// 	u64 zero = 0;
-// 	skp =  (struct sock *) PT_REGS_PARM1(ctx);
-// 	state = (int) PT_REGS_PARM2(ctx);
-//
-// 	status = bpf_map_lookup_elem(&tcptracer_status, &zero);
-// 	if (status == NULL || status->state != TCPTRACER_STATE_READY) {
-// 		return 0;
-// 	}
-//
-// 	if (state != TCP_ESTABLISHED && state != TCP_CLOSE) {
-// 		return 0;
-// 	}
-//
-// 	if (check_family(skp, AF_INET)) {
-// 		// output
-// 		struct ipv4_tuple_t t = { };
-// 		if (!read_ipv4_tuple(&t, status, skp)) {
-// 			return 0;
-// 		}
-// 		if (state == TCP_CLOSE) {
-// 			bpf_map_delete_elem(&tuplepid_ipv4, &t);
-// 			return 0;
-// 		}
-//
-// 		struct pid_comm_t *pp;
-//
-// 		pp = bpf_map_lookup_elem(&tuplepid_ipv4, &t);
-// 		if (pp == 0) {
-// 			return 0;	// missed entry
-// 		}
-// 		struct pid_comm_t p = { };
-// 		bpf_probe_read(&p, sizeof(struct pid_comm_t), pp);
-//
-// 		struct tcp_ipv4_event_t evt4 = {
-// 			.timestamp = bpf_ktime_get_ns(),
-// 			.cpu = cpu,
-// 			.type = TCP_EVENT_TYPE_CONNECT,
-// 			.pid = p.pid >> 32,
-// 			.saddr = t.saddr,
-// 			.daddr = t.daddr,
-// 			.sport = ntohs(t.sport),
-// 			.dport = ntohs(t.dport),
-// 			.netns = t.netns,
-// 		};
-// 		int i;
-// 		for (i = 0; i < TASK_COMM_LEN; i++) {
-// 			evt4.comm[i] = p.comm[i];
-// 		}
-//
-// 		bpf_perf_event_output(ctx, &tcp_event_ipv4, cpu, &evt4, sizeof(evt4));
-// 		bpf_map_delete_elem(&tuplepid_ipv4, &t);
-// 	} else if (check_family(skp, AF_INET6)) {
-// 		// output
-// 		struct ipv6_tuple_t t = { };
-// 		if (!read_ipv6_tuple(&t, status, skp)) {
-// 			return 0;
-// 		}
-// 		if (state == TCP_CLOSE) {
-// 			bpf_map_delete_elem(&tuplepid_ipv6, &t);
-// 			return 0;
-// 		}
-//
-// 		struct pid_comm_t *pp;
-// 		pp = bpf_map_lookup_elem(&tuplepid_ipv6, &t);
-// 		if (pp == 0) {
-// 			return 0;       // missed entry
-// 		}
-// 		struct pid_comm_t p = { };
-// 		bpf_probe_read(&p, sizeof(struct pid_comm_t), pp);
-// 		struct tcp_ipv6_event_t evt6 = {
-// 			.timestamp = bpf_ktime_get_ns(),
-// 			.cpu = cpu,
-// 			.type = TCP_EVENT_TYPE_CONNECT,
-// 			.pid = p.pid >> 32,
-// 			.saddr_h = t.saddr_h,
-// 			.saddr_l = t.saddr_l,
-// 			.daddr_h = t.daddr_h,
-// 			.daddr_l = t.daddr_l,
-// 			.sport = ntohs(t.sport),
-// 			.dport = ntohs(t.dport),
-// 			.netns = t.netns,
-// 		};
-// 		int i;
-// 		for (i = 0; i < TASK_COMM_LEN; i++) {
-// 			evt6.comm[i] = p.comm[i];
-// 		}
-//
-// 		bpf_perf_event_output(ctx, &tcp_event_ipv6, cpu, &evt6, sizeof(evt6));
-// 		bpf_map_delete_elem(&tuplepid_ipv6, &t);
-// 	}
-//
-// 	return 0;
-// }
+// Modified: Removed tcp_set_state kprobe, which we do not need for our application
 
-// Modified: Disabled tcp_close kprobe, as we do not need that for our application
-// SEC("kprobe/tcp_close")
-// int kprobe__tcp_close(struct pt_regs *ctx)
-// {
-// 	struct sock *sk;
-// 	struct tcptracer_status_t *status;
-// 	u64 zero = 0;
-// 	u64 pid = bpf_get_current_pid_tgid();
-// 	u32 cpu = bpf_get_smp_processor_id();
-// 	sk = (struct sock *) PT_REGS_PARM1(ctx);
-//
-// 	status = bpf_map_lookup_elem(&tcptracer_status, &zero);
-// 	if (status == NULL || status->state != TCPTRACER_STATE_READY) {
-// 		return 0;
-// 	}
-//
-// 	u32 net_ns_inum;
-// 	u16 sport, dport;
-// 	sport = 0;
-// 	dport = 0;
-//
-// 	// Get network namespace id
-// 	possible_net_t *skc_net;
-//
-// 	skc_net = NULL;
-// 	net_ns_inum = 0;
-// 	bpf_probe_read(&skc_net, sizeof(possible_net_t *), ((char *)sk) + status->offset_netns);
-// 	bpf_probe_read(&net_ns_inum, sizeof(net_ns_inum), ((char *)skc_net) + status->offset_ino);
-//
-// 	if (check_family(sk, AF_INET)) {
-// 		// output
-// 		struct ipv4_tuple_t t = { };
-// 		if (!read_ipv4_tuple(&t, status, sk)) {
-// 			bpf_map_delete_elem(&tuplepid_ipv4, &t);
-// 			return 0;
-// 		}
-//
-// 		// output
-// 		struct tcp_ipv4_event_t evt = {
-// 			.timestamp = bpf_ktime_get_ns(),
-// 			.cpu = cpu,
-// 			.type = TCP_EVENT_TYPE_CLOSE,
-// 			.pid = pid >> 32,
-// 			.saddr = t.saddr,
-// 			.daddr = t.daddr,
-// 			.sport = ntohs(t.sport),
-// 			.dport = ntohs(t.dport),
-// 			.netns = t.netns,
-// 		};
-// 		bpf_get_current_comm(&evt.comm, sizeof(evt.comm));
-//
-// 		bpf_perf_event_output(ctx, &tcp_event_ipv4, cpu, &evt, sizeof(evt));
-// 	} else if (check_family(sk, AF_INET6)) {
-// 		// output
-// 		struct ipv6_tuple_t t = { };
-// 		if (!read_ipv6_tuple(&t, status, sk)) {
-// 			bpf_map_delete_elem(&tuplepid_ipv6, &t);
-// 			return 0;
-// 		}
-//
-// 		if (is_ipv4_mapped_ipv6(t.saddr_h, t.saddr_l, t.daddr_h, t.daddr_l)) {
-// 			struct tcp_ipv4_event_t evt4 = {
-// 				.timestamp = bpf_ktime_get_ns(),
-// 				.cpu = cpu,
-// 				.type = TCP_EVENT_TYPE_CLOSE,
-// 				.pid = pid >> 32,
-// 				.saddr = (u32)(t.saddr_l >> 32),
-// 				.daddr = (u32)(t.daddr_l >> 32),
-// 				.sport = ntohs(t.sport),
-// 				.dport = ntohs(t.dport),
-// 				.netns = t.netns,
-// 			};
-// 			bpf_get_current_comm(&evt4.comm, sizeof(evt4.comm));
-// 			if (evt4.saddr != 0 && evt4.daddr != 0 && evt4.sport != 0 && evt4.dport != 0) {
-// 				bpf_perf_event_output(ctx, &tcp_event_ipv4, cpu, &evt4, sizeof(evt4));
-// 			}
-//
-// 			struct ipv4_tuple_t t = {
-// 				t.saddr = evt4.saddr,
-// 				t.daddr = evt4.daddr,
-// 				t.sport = ntohs(evt4.sport),
-// 				t.dport = ntohs(evt4.dport),
-// 				t.netns = evt4.netns,
-// 			};
-// 			bpf_map_delete_elem(&tuplepid_ipv4, &t);
-// 			return 0;
-// 		}
-//
-// 		struct tcp_ipv6_event_t evt = {
-// 			.timestamp = bpf_ktime_get_ns(),
-// 			.cpu = cpu,
-// 			.type = TCP_EVENT_TYPE_CLOSE,
-// 			.pid = pid >> 32,
-// 			.saddr_h = t.saddr_h,
-// 			.saddr_l = t.saddr_l,
-// 			.daddr_h = t.daddr_h,
-// 			.daddr_l = t.daddr_l,
-// 			.sport = ntohs(t.sport),
-// 			.dport = ntohs(t.dport),
-// 			.netns = t.netns,
-// 		};
-// 		bpf_get_current_comm(&evt.comm, sizeof(evt.comm));
-//
-// 		bpf_perf_event_output(ctx, &tcp_event_ipv6, cpu, &evt, sizeof(evt));
-// 	}
-// 	return 0;
-// }
+// Modified: Removed tcp_close kprobe, which we do not need for our application
 
 SEC("kretprobe/inet_csk_accept")
 int kretprobe__inet_csk_accept(struct pt_regs *ctx)
@@ -865,49 +635,7 @@ int kretprobe__inet_csk_accept(struct pt_regs *ctx)
 	return 0;
 }
 
-// Modified: Disabled fd_install functionality to reduce overhead, as we do not need this for our application.
-//
-// SEC("kprobe/fd_install")
-// int kprobe__fd_install(struct pt_regs *ctx)
-// {
-// 	u64 pid = bpf_get_current_pid_tgid();
-// 	u32 tgid = pid >> 32;
-// 	unsigned long fd = (unsigned long) PT_REGS_PARM1(ctx);
-// 	u32 *exists = NULL;
-//
-// 	exists = bpf_map_lookup_elem(&fdinstall_pids, &tgid);
-// 	if (exists == NULL || !*exists)
-// 		return 0;
-//
-// 	bpf_map_update_elem(&fdinstall_ret, &pid, &fd, BPF_ANY);
-//
-// 	return 0;
-// }
-
-// SEC("kretprobe/fd_install")
-// int kretprobe__fd_install(struct pt_regs *ctx)
-// {
-// 	u64 pid = bpf_get_current_pid_tgid();
-// 	unsigned long *fd;
-// 	fd = bpf_map_lookup_elem(&fdinstall_ret, &pid);
-// 	if (fd == NULL) {
-// 		return 0;	// missed entry
-// 	}
-// 	bpf_map_delete_elem(&fdinstall_ret, &pid);
-//
-// 	u32 cpu = bpf_get_smp_processor_id();
-// 	struct tcp_ipv4_event_t evt = {
-// 		.timestamp = bpf_ktime_get_ns(),
-// 		.cpu = cpu,
-// 		.type = TCP_EVENT_TYPE_FD_INSTALL,
-// 	};
-// 	evt.pid = pid >> 32;
-// 	evt.fd = *(__u32*)fd;
-// 	bpf_get_current_comm(&evt.comm, sizeof(evt.comm));
-// 	bpf_perf_event_output(ctx, &tcp_event_ipv4, cpu, &evt, sizeof(evt));
-//
-// 	return 0;
-// }
+// Modified: Removed fd_install kprobes, as we do not need this for our application.
 
 // Modified: Added kprobes for UDP connect "ip*_datagram_connect" functions.
 // These are pretty much copies of the functions for the tcp_connect kprobes.
@@ -927,7 +655,7 @@ int kprobe__ip4_datagram_connect(struct pt_regs *ctx)
 SEC("kretprobe/ip4_datagram_connect")
 int kretprobe__ip4_datagram_connect(struct pt_regs *ctx)
 {
-	int ret = PT_REGS_RC(ctx);
+    int ret = PT_REGS_RC(ctx);
 	u64 pid = bpf_get_current_pid_tgid();
 	struct sock **skpp;
 	u64 zero = 0;
@@ -943,6 +671,8 @@ int kretprobe__ip4_datagram_connect(struct pt_regs *ctx)
 	bpf_map_delete_elem(&connectsock_ipv4, &pid);
 
 	if (ret != 0) {
+		// failed to send SYNC packet, may not have populated
+		// socket __sk_common.{skc_rcv_saddr, ...}
 		return 0;
 	}
 
@@ -955,15 +685,20 @@ int kretprobe__ip4_datagram_connect(struct pt_regs *ctx)
 		return 0;
 	}
 
-	// output
-	struct ipv4_tuple_t t = { };
-	if (!read_ipv4_tuple(&t, status, skp)) {
+    // Modified: immediately output connect events, don't wait for tcp_set_state
+    struct tcp_ipv4_event_t evt4 = { };
+	if (!read_ipv4_tuple(&evt4, status, skp)) {
 		return 0;
 	}
 
-	struct pid_comm_t p = { .pid = pid };
-	bpf_get_current_comm(p.comm, sizeof(p.comm));
-	bpf_map_update_elem(&tuplepid_ipv4, &t, &p, BPF_ANY);
+    u32 cpu = bpf_get_smp_processor_id();
+    evt4.timestamp = bpf_ktime_get_ns();
+    evt4.cpu = cpu;
+    evt4.type = TCP_EVENT_TYPE_CONNECT;
+    evt4.pid = pid >> 32;
+	bpf_get_current_comm(&evt4.comm, sizeof(evt4.comm));
+
+    bpf_perf_event_output(ctx, &tcp_event_ipv4, cpu, &evt4, sizeof(evt4));
 
 	return 0;
 }
@@ -1008,32 +743,46 @@ int kretprobe__ip6_datagram_connect(struct pt_regs *ctx)
 	}
 
 	if (ret != 0) {
+		// failed to send SYNC packet, may not have populated
+		// socket __sk_common.{skc_rcv_saddr, ...}
 		return 0;
 	}
 
-	// output
-	struct ipv6_tuple_t t = { };
+    // Modified: immediately output connect events, don't wait for tcp_set_state
+	struct tcp_ipv6_event_t t = { };
 	if (!read_ipv6_tuple(&t, status, skp)) {
 		return 0;
 	}
 
-	struct pid_comm_t p = { };
-	p.pid = pid;
-	bpf_get_current_comm(p.comm, sizeof(p.comm));
+    u32 cpu = bpf_get_smp_processor_id();
 
-	if (is_ipv4_mapped_ipv6(t.saddr_h, t.saddr_l, t.daddr_h, t.daddr_l)) {
-		struct ipv4_tuple_t t4 = {
-			.netns = t.netns,
+    if (is_ipv4_mapped_ipv6(t.saddr_h, t.saddr_l, t.daddr_h, t.daddr_l)) {
+		struct tcp_ipv4_event_t t4 = {
+            .timestamp = bpf_ktime_get_ns(),
+            .cpu = cpu,
+            .type = TCP_EVENT_TYPE_CONNECT,
+            .pid = pid >> 32,
 			.saddr = (u32)(t.saddr_l >> 32),
 			.daddr = (u32)(t.daddr_l >> 32),
-			.sport = ntohs(t.sport),
-			.dport = ntohs(t.dport),
+			.sport = t.sport,
+			.dport = t.dport,
+            .netns = t.netns,
 		};
-		bpf_map_update_elem(&tuplepid_ipv4, &t4, &p, BPF_ANY);
+
+        bpf_get_current_comm(&t4.comm, sizeof(t4.comm));
+
+        bpf_perf_event_output(ctx, &tcp_event_ipv4, cpu, &t4, sizeof(t4));
 		return 0;
 	}
 
-	bpf_map_update_elem(&tuplepid_ipv6, &t, &p, BPF_ANY);
+    t.timestamp = bpf_ktime_get_ns();
+    t.cpu = cpu;
+    t.type = TCP_EVENT_TYPE_CLOSE;
+    t.pid = pid >> 32;
+    bpf_get_current_comm(&t.comm, sizeof(t.comm));
+
+    bpf_perf_event_output(ctx, &tcp_event_ipv6, cpu, &t, sizeof(t));
+
 	return 0;
 }
 
