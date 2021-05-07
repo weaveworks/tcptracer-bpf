@@ -19,40 +19,43 @@ const (
 	TCP_EVENTS_LOST
 )
 
-var watchFdInstallPids string
-
 type tcpEventTracer struct {
-	lastTimestampV4 uint64
-	lastTimestampV6 uint64
+	// Modified: don't exit on late events
+	// lastTimestampV4 uint64
+	// lastTimestampV6 uint64
 }
 
+// Modified: output formats to remove timestamp, cpu, and netns
 func (t *tcpEventTracer) TCPEventV4(e tracer.TcpV4) {
 	if e.Type == tracer.EventFdInstall {
-		fmt.Printf("%v cpu#%d %s %v %s %v\n",
-			e.Timestamp, e.CPU, e.Type, e.Pid, e.Comm, e.Fd)
+		fmt.Printf("%s %v %s %v\n",
+			e.Type, e.Pid, e.Comm, e.Fd)
 	} else {
-		fmt.Printf("%v cpu#%d %s %v %s %v:%v %v:%v %v\n",
-			e.Timestamp, e.CPU, e.Type, e.Pid, e.Comm, e.SAddr, e.SPort, e.DAddr, e.DPort, e.NetNS)
+		fmt.Printf("%s %d %v %s %v:%v %v:%v\n",
+			e.Type, 4, e.Pid, e.Comm, e.SAddr, e.SPort, e.DAddr, e.DPort)
 	}
 
-	if t.lastTimestampV4 > e.Timestamp {
-		fmt.Printf("ERROR: late event!\n")
-		os.Exit(TCP_EVENT_LATE)
-	}
+	// Modified: don't exit on late events
+	// if t.lastTimestampV4 > e.Timestamp {
+	// 	fmt.Printf("ERROR: late event!\n")
+	// 	os.Exit(TCP_EVENT_LATE)
+	// }
 
-	t.lastTimestampV4 = e.Timestamp
+	// t.lastTimestampV4 = e.Timestamp
 }
 
+// Modified: output format to remove timestamp, cpu, and netns
 func (t *tcpEventTracer) TCPEventV6(e tracer.TcpV6) {
-	fmt.Printf("%v cpu#%d %s %v %s %v:%v %v:%v %v\n",
-		e.Timestamp, e.CPU, e.Type, e.Pid, e.Comm, e.SAddr, e.SPort, e.DAddr, e.DPort, e.NetNS)
+	fmt.Printf("%s %d %v %s %v:%v %v:%v\n",
+		e.Type, 6, e.Pid, e.Comm, e.SAddr, e.SPort, e.DAddr, e.DPort)
 
-	if t.lastTimestampV6 > e.Timestamp {
-		fmt.Printf("ERROR: late event!\n")
-		os.Exit(TCP_EVENT_LATE)
-	}
+	// Modified: don't exit on late events
+	// if t.lastTimestampV6 > e.Timestamp {
+	// 	fmt.Printf("ERROR: late event!\n")
+	// 	os.Exit(TCP_EVENT_LATE)
+	// }
 
-	t.lastTimestampV6 = e.Timestamp
+	// t.lastTimestampV6 = e.Timestamp
 }
 
 func (t *tcpEventTracer) LostV4(count uint64) {
@@ -66,7 +69,7 @@ func (t *tcpEventTracer) LostV6(count uint64) {
 }
 
 func init() {
-	// Modified: Removed fdinstall kprobes, so removing this option as well
+	// Modified: Removed monitor-fdinstall-pids option
 	// flag.StringVar(&watchFdInstallPids, "monitor-fdinstall-pids", "", "a comma-separated list of pids that need to be monitored for fdinstall events")
 
 	flag.Parse()
