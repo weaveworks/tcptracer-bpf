@@ -526,7 +526,7 @@ int kretprobe__tcp_v6_connect(struct pt_regs *ctx)
 
     t.timestamp = bpf_ktime_get_ns();
     t.cpu = cpu;
-    t.type = TCP_EVENT_TYPE_CLOSE;
+    t.type = TCP_EVENT_TYPE_CONNECT;
     t.pid = pid >> 32;
     bpf_get_current_comm(&t.comm, sizeof(t.comm));
 
@@ -777,7 +777,7 @@ int kretprobe__ip6_datagram_connect(struct pt_regs *ctx)
 
     t.timestamp = bpf_ktime_get_ns();
     t.cpu = cpu;
-    t.type = TCP_EVENT_TYPE_CLOSE;
+    t.type = TCP_EVENT_TYPE_CONNECT;
     t.pid = pid >> 32;
     bpf_get_current_comm(&t.comm, sizeof(t.comm));
 

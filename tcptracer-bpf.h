@@ -7,8 +7,6 @@
 #define TCP_EVENT_TYPE_ACCEPT           2
 #define TCP_EVENT_TYPE_CLOSE            3
 #define TCP_EVENT_TYPE_FD_INSTALL       4
-// Modified: added UDP datagram connect events
-#define UDP_EVENT_TYPE_CONNECT          5
 
 
 #define GUESS_SADDR      0
