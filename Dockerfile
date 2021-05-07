@@ -11,6 +11,9 @@ RUN curl -fsSLo shfmt https://github.com/mvdan/sh/releases/download/v1.3.0/shfmt
 	echo "b1925c2c405458811f0c227266402cf1868b4de529f114722c2e3a5af4ac7bb2  shfmt" | sha256sum -c && \
 	chmod +x shfmt && \
 	mv shfmt /usr/bin
-RUN go get -u github.com/fatih/hclfmt
+
+# Modified: This package uses github.com/hashicorp/hcl/hcl/printer which no longer
+# exists on github (at that path). Removed this package, as there's no need to print hcl for now.
+# RUN go get -u github.com/fatih/hclfmt
 
 RUN mkdir -p /src /go
