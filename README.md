@@ -1,4 +1,4 @@
-# tcptracer-bpf
+# DEPRECATED: tcptracer-bpf
 
 tcptracer-bpf is an eBPF program using kprobes to trace TCP events (connect,
 accept, close). The eBPF program is compiled to an ELF object file.
